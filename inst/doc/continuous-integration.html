@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Continuous integration</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Continuous integration</h1>
+
+
+
+<p>This vignette explains how to run mutator on a package in GitHub
+Actions using the reusable workflow that ships with the package, how to
+gate a pull request on a minimum mutation score, and how to publish a
+badge.</p>
+<div id="the-reusable-workflow" class="section level2">
+<h2>The reusable workflow</h2>
+<p>mutator provides a reusable workflow at
+<code>PRL-PRG/mutator/.github/workflows/mutation-testing.yaml</code>. A
+repository adopts it with a short caller workflow rather than by copying
+any script. The workflow checks out your package, installs it together
+with mutator and its dependencies, runs <code>mutate_package()</code>,
+uploads a results artifact, and writes a Markdown summary to the run’s
+Summary tab.</p>
+<p>Add <code>.github/workflows/mutation-testing.yaml</code> to your
+repository:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">,</span><span class="at"> master</span><span class="kw">]</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="at">  </span><span class="fu">workflow_dispatch</span><span class="kw">:</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> mutation-testing</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="at">  </span><span class="fu">mutation</span><span class="kw">:</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="at">    </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> PRL-PRG/mutator/.github/workflows/mutation-testing.yaml@v0.2.0</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="at">    </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="at">      </span><span class="fu">target-margin</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;0.10&quot;</span></span></code></pre></div>
+<p>Pin to a released tag such as <code>@v0.2.0</code>. The reusable
+workflow lives in the mutator package repository and is versioned with
+the package, so the tag you pin matches a mutator release. Bump the tag
+in your caller when you want to move to a newer release. You can also
+pin to a branch (for example <code>@main</code>) to track the latest
+changes, at the cost of reproducibility.</p>
+</div>
+<div id="inputs" class="section level2">
+<h2>Inputs</h2>
+<p>All inputs are optional.</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Input</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>target-margin</code></td>
+<td><code>&quot;0.10&quot;</code></td>
+<td>Sample mutants to this plus or minus CI half-width, as a proportion.
+Empty tests every mutant.</td>
+</tr>
+<tr class="even">
+<td><code>max-mutants</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Fixed cap on sampled mutants. Takes precedence over
+<code>target-margin</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>fail-under</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Fail the job when the score is below this percentage.</td>
+</tr>
+<tr class="even">
+<td><code>show-confidence-interval</code></td>
+<td><code>true</code></td>
+<td>Show the confidence interval with a sampled mutation score in the
+badge and job summary.</td>
+</tr>
+<tr class="odd">
+<td><code>cores</code></td>
+<td><code>&quot;0&quot;</code></td>
+<td>Parallel workers. <code>&quot;0&quot;</code> auto-detects.</td>
+</tr>
+<tr class="even">
+<td><code>timeout-seconds</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Per-mutant timeout. Empty derives it from the baseline run.</td>
+</tr>
+<tr class="odd">
+<td><code>isolate</code></td>
+<td><code>true</code></td>
+<td>Deep-copy <code>src/</code> and <code>tests/</code> per mutant, for
+non-hermetic suites.</td>
+</tr>
+<tr class="even">
+<td><code>coverage-guided</code></td>
+<td><code>true</code></td>
+<td>Run only the tests covering each mutated line. Disabled
+automatically, with a warning, for installed-tests packages.</td>
+</tr>
+<tr class="odd">
+<td><code>coverage-backend</code></td>
+<td><code>record_tests</code></td>
+<td>How coverage is attributed to tests. <code>&quot;per_file&quot;</code> gives
+exact file-level attribution (no helper-file fallback), at the cost of
+relying on covr internals.</td>
+</tr>
+<tr class="even">
+<td><code>exclude-files</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Glob patterns of <code>R/</code> files to skip.</td>
+</tr>
+<tr class="odd">
+<td><code>badge-label</code></td>
+<td><code>mutator</code></td>
+<td>Label shown on the shields.io badge.</td>
+</tr>
+<tr class="even">
+<td><code>deploy-badge</code></td>
+<td><code>false</code></td>
+<td>Publish a badge. Requires <code>contents: write</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>badge-branch</code></td>
+<td><code>gh-pages</code></td>
+<td>Branch the badge JSON is deployed to.</td>
+</tr>
+<tr class="even">
+<td><code>mutator-spec</code></td>
+<td><code>github::PRL-PRG/mutator</code></td>
+<td>pak spec used to install mutator, for example
+<code>any::mutator</code> once it is on CRAN.</td>
+</tr>
+<tr class="odd">
+<td><code>install-imputesrcref</code></td>
+<td><code>true</code></td>
+<td>Install the optional imputesrcref package to refine mutant
+locations.</td>
+</tr>
+<tr class="even">
+<td><code>r-version</code></td>
+<td><code>release</code></td>
+<td>R version passed to <code>setup-r</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="enforcing-a-minimum-mutation-score" class="section level2">
+<h2>Enforcing a minimum mutation score</h2>
+<p>Set <code>fail-under</code> to the percentage below which the job
+should fail. The workflow computes the mutation score, and if it is
+below the threshold the job exits non-zero, which blocks the pull
+request:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="fu">mutation</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="at">    </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> PRL-PRG/mutator/.github/workflows/mutation-testing.yaml@v0.2.0</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="at">    </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="at">      </span><span class="fu">fail-under</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;75&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="at">      </span><span class="fu">target-margin</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;0.05&quot;</span></span></code></pre></div>
+<p>Two points make a threshold gate reliable:</p>
+<ol style="list-style-type: decimal">
+<li>Reduce sampling noise. The score is estimated from a sample of
+mutants, so a run-to-run variation exists. Use a tighter
+<code>target-margin</code> (for example <code>&quot;0.05&quot;</code>) or a large
+<code>max-mutants</code> when you gate on <code>fail-under</code>, so
+the estimate does not cross the threshold by chance. The half-width you
+choose is roughly how far the reported score can sit from the true
+score.</li>
+<li>Ratchet the threshold. Start <code>fail-under</code> at, or slightly
+below, your current score, then raise it as you add tests. This locks in
+progress without failing the build on the day you adopt it.</li>
+</ol>
+<p>Leave <code>fail-under</code> empty to report the score on every run
+without failing.</p>
+<p>The measured score, its confidence interval, and the killed,
+survived, and hanged counts appear in the run’s Summary tab and in the
+uploaded artifact regardless of whether a threshold is set.</p>
+</div>
+<div id="badge" class="section level2">
+<h2>Badge</h2>
+<p>Set <code>deploy-badge: true</code> and grant the caller job
+<code>contents: write</code>. The workflow writes a <a href="https://shields.io/endpoint">shields.io endpoint</a> JSON file and
+deploys it to <code>gh-pages</code> (or <code>badge-branch</code>):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">mutation</span><span class="kw">:</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">    </span><span class="fu">permissions</span><span class="kw">:</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="at">      </span><span class="fu">contents</span><span class="kw">:</span><span class="at"> write</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="at">    </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> PRL-PRG/mutator/.github/workflows/mutation-testing.yaml@v0.2.0</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="at">    </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="at">      </span><span class="fu">deploy-badge</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>Reference the badge in your README, replacing
+<code>OWNER/REPO</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="al">![mutator](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/gh-pages/mutation-score.json)</span></span></code></pre></div>
+<p>This reads the JSON straight from <code>badge-branch</code> via
+<code>raw.githubusercontent.com</code>, so no GitHub Pages setup is
+needed. If you instead fetch it through a pkgdown Pages site
+(<code>https://OWNER.github.io/REPO/mutation-score.json</code>), GitHub
+Pages must be activated and serving from <code>badge-branch</code>, or
+the badge will not appear.</p>
+<p>The badge is labelled <code>mutator</code>; its message shows the
+score and, when the run sampled mutants, a compact asymmetric confidence
+interval such as <code>83.2% -5.2/+4.7% (95% CI)</code>. The badge
+colour tracks the score: green above 80%, yellow above 60%, orange above
+40%, and red below.</p>
+<p>Set <code>show-confidence-interval: false</code> to show only the
+mutation score in both the badge and the job summary. The confidence
+interval remains part of the uploaded mutation results.</p>
+</div>
+<div id="permissions-and-private-dependencies" class="section level2">
+<h2>Permissions and private dependencies</h2>
+<p>The workflow reads <code>GITHUB_TOKEN</code> to install packages from
+GitHub, which is provided automatically. You only need to set
+<code>permissions: contents: write</code> on the caller job when
+<code>deploy-badge</code> is true, because publishing the badge pushes
+to a branch. Pull request runs never deploy the badge.</p>
+<p>If your package depends on packages that are not on CRAN, pass them
+through <code>extra-packages</code> as pak specs:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="at">    </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="at">      </span><span class="fu">extra-packages</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;github::owner/dependency, any::somePackage&quot;</span></span></code></pre></div>
+</div>
+<div id="tuning-the-run" class="section level2">
+<h2>Tuning the run</h2>
+<p>Mutation testing runs the test suite once per mutant, so a large
+package can take a while. To keep CI fast:</p>
+<ul>
+<li>Cap work with <code>max-mutants</code>, or let
+<code>target-margin</code> size the sample for you.</li>
+<li><code>coverage-guided</code> is on by default and runs only the
+tests that cover each mutated line. It applies to packages tested with
+testthat; for installed-tests packages the workflow warns and runs the
+full suite.</li>
+<li>Use <code>exclude-files</code> to skip generated or vendored files
+under <code>R/</code>.</li>
+<li>Raise <code>cores</code> on a larger runner, or leave it at
+<code>&quot;0&quot;</code> to use every core.</li>
+</ul>
+<p>See the <a href="configuration.html">Configuration article</a> for
+how these options behave in detail.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

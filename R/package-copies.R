@@ -1,0 +1,120 @@
+# Internal helpers for constructing lightweight package copies for mutants.
+
+# Sys.junction() is a Windows-only base function; declare it as a known global so
+# codetools does not flag the OS-guarded reference in link_or_copy() on other
+# platforms.
+utils::globalVariables("Sys.junction")
+
+link_or_copy <- function(from, to, recursive = FALSE, link = NULL) {
+  from <- normalizePath(from, mustWork = TRUE)
+  is_dir <- dir.exists(from)
+  # Pick the linker when the caller has not. On Windows a directory symlink is a
+  # reparse point unlink() cannot remove; a junction (privilege-free) is removed
+  # cleanly. Sys.junction is Windows-only (declared as a global above).
+  if (is.null(link)) {
+    link <- if (is_dir && identical(.Platform$OS.type, "windows")) {
+      Sys.junction
+    } else {
+      file.symlink
+    }
+  }
+  linked <- tryCatch(
+    link(from, to),
+    warning = function(w) FALSE,
+    error = function(e) FALSE
+  )
+  target_exists <- if (is_dir) dir.exists(to) else file.exists(to)
+  link_works <- isTRUE(linked) && target_exists
+  if (link_works) {
+    return(invisible(TRUE))
+  }
+
+  # A failed directory symlink must be copied *into* an existing destination
+  # directory. file.copy(from, to, recursive = TRUE) silently fails when `to`
+  # does not exist, which is the normal case for a new mutant package.
+  unlink(to, recursive = TRUE, force = TRUE)
+  copied <- if (dir.exists(from)) {
+    if (!isTRUE(recursive)) {
+      FALSE
+    } else {
+      created <- dir.create(to, recursive = TRUE, showWarnings = FALSE)
+      entries <- list.files(from, all.files = TRUE, no.. = TRUE, full.names = TRUE)
+      (isTRUE(created) || dir.exists(to)) &&
+        (length(entries) == 0L || all(file.copy(entries, to, recursive = TRUE)))
+    }
+  } else {
+    isTRUE(file.copy(from, to))
+  }
+  if (!isTRUE(copied)) {
+    stop(sprintf("Could not link or copy '%s' to '%s'.", from, to), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Materialise the tests tree using links, but deep-copy snapshot directories so
+# testthat cannot create or rewrite snapshots through a link to the source tree.
+mirror_tests_isolating_snapshots <- function(from, to) {
+  dir.create(to, recursive = TRUE, showWarnings = FALSE)
+  for (entry in list.files(from, all.files = TRUE, no.. = TRUE, full.names = TRUE)) {
+    name <- basename(entry)
+    target <- file.path(to, name)
+    if (dir.exists(entry)) {
+      if (identical(name, "_snaps")) {
+        file.copy(entry, to, recursive = TRUE)
+      } else {
+        mirror_tests_isolating_snapshots(entry, target)
+      }
+    } else {
+      link_or_copy(entry, target)
+    }
+  }
+}
+
+create_mutant_package_copy <- function(pkg_dir, src_file, mutated_file,
+                                       target_root, isolate = FALSE,
+                                       test_strategy = "testthat") {
+  pkg_copy <- file.path(target_root, basename(pkg_dir))
+  dir.create(pkg_copy, recursive = TRUE, showWarnings = FALSE)
+  # Under isolate, deep-copy the directories a mutant run may write to so parallel
+  # workers never share them. The tinytest strategy runs its tests from
+  # inst/tinytest, so isolate that instead of tests/ (which holds only the
+  # tinytest.R harness, unused in dev-mode).
+  isolate_copy_dirs <- if (isTRUE(isolate)) {
+    if (identical(test_strategy, "tinytest")) c("src", "inst") else c("src", "tests")
+  } else {
+    character(0)
+  }
+
+  top_entries <- list.files(pkg_dir, all.files = TRUE, no.. = TRUE, full.names = TRUE)
+  for (entry in top_entries) {
+    name <- basename(entry)
+    if (identical(name, "R")) {
+      next
+    }
+    target <- file.path(pkg_copy, name)
+    if (name %in% isolate_copy_dirs && dir.exists(entry)) {
+      file.copy(entry, pkg_copy, recursive = TRUE)
+    } else if (identical(name, "tests") && dir.exists(entry) &&
+      identical(test_strategy, "testthat")) {
+      mirror_tests_isolating_snapshots(entry, target)
+    } else {
+      link_or_copy(entry, target, recursive = dir.exists(entry))
+    }
+  }
+
+  original_r_dir <- file.path(pkg_dir, "R")
+  copy_r_dir <- file.path(pkg_copy, "R")
+  dir.create(copy_r_dir, recursive = TRUE, showWarnings = FALSE)
+
+  r_entries <- list.files(original_r_dir, all.files = TRUE, no.. = TRUE, full.names = TRUE)
+  for (entry in r_entries) {
+    name <- basename(entry)
+    if (identical(name, basename(src_file))) {
+      next
+    }
+    link_or_copy(entry, file.path(copy_r_dir, name), recursive = dir.exists(entry))
+  }
+
+  file.copy(mutated_file, file.path(copy_r_dir, basename(src_file)), overwrite = TRUE)
+  pkg_copy
+}
