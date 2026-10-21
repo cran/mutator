@@ -4,3 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
+## -----------------------------------------------------------------------------
+ops <- mutator::mutation_operators()
+head(ops[, c("id", "family", "default", "example")])
+
