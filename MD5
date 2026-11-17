@@ -1,8 +1,8 @@
-4c80a1797921f701d68e2abcabdf1ac1 *DESCRIPTION
+1b932bf37f56a21a8673d0ab6a62a011 *DESCRIPTION
 0d3ffbfc3ca484373c9ceb3b953c22fb *NAMESPACE
-f3f594195fe77404ca7331a2099b118d *NEWS.md
+3da75b770f63440c694fab7c4932a7f2 *NEWS.md
 0776a3093a211e3f7edd639a9f9f45e0 *R/catch-routine-registration.R
-14a8c159dce52accb78b5396e50b0747 *R/coverage-guided.R
+627ad4143bd525b525906332770e331d *R/coverage-guided.R
 e5ff04ebb472343eb97b72e93ed12876 *R/ignore-directives.R
 267edd5de3352548e5616b64734b7a7d *R/init.R
 e162dc683601247fc3028ac596a504bf *R/mutant-metadata.R
@@ -22,7 +22,7 @@ a2cdcd68582754f4e6951358970d53de *R/package-test-runner.R
 142da520086caec0f888b8852def504e *R/test-harness.R
 9f3cfe0fd086b9b909b4c742b19934d3 *R/trivial-equivalence.R
 5bc9b87b2a002f188cfd771284ba3b01 *README.md
-5d8fe0abd4f057a968ccb8e8cb97f50d *build/vignette.rds
+5894e1f8acda5ff760f213cfe77723f6 *build/vignette.rds
 6b4916c93d5fc6d1ba985d577c708063 *inst/ci/mutation-score.R
 c12f21f65b6807d0d04de81d57bc2623 *inst/doc/configuration.R
 392e3cc21e992aed4e9f00e52501550a *inst/doc/configuration.Rmd
@@ -32,7 +32,7 @@ c12f21f65b6807d0d04de81d57bc2623 *inst/doc/configuration.R
 90ed28ef7947f75b13d80310bb0b9e6c *inst/doc/continuous-integration.html
 dfe8cf9391b48c2f25eed740e3495dc9 *inst/doc/mutating-testing-package.R
 942b15bf801024c4630a9ad3a2ffa487 *inst/doc/mutating-testing-package.Rmd
-f29d7ae9fe0fecc331d6c1b7561b69a0 *inst/doc/mutating-testing-package.html
+b7a11b7e7a0c164729cf2697c3a7163e *inst/doc/mutating-testing-package.html
 e2c3ab8606f93327a0f47267cf485e2b *man/call_openai_api.Rd
 bf3442c1b104e378c26b7822d9ffe81e *man/create_equivalent_mutant_prompt.Rd
 7c7cc3d0b36d1021a9d492d843069392 *man/get_openai_config.Rd

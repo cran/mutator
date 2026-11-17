@@ -1,6 +1,6 @@
 Package: mutator
 Title: Mutation Testing
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: c(
     person("Pierre", "Donat-Bouillud", email = "pierre.donat.bouillud@fit.cvut.cz", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0003-4455-1130")),
     person("Assanali", "Amandykov", email = "amandass@fit.cvut.cz", role = c("aut", "cph")))
@@ -26,10 +26,10 @@ VignetteBuilder: knitr
 SystemRequirements: C++17
 Config/roxygen2/version: 8.0.0
 NeedsCompilation: yes
-Packaged: 2026-10-20 16:40:52 UTC; pierre
+Packaged: 2026-11-17 00:48:47 UTC; pierre
 Author: Pierre Donat-Bouillud [aut, cre, cph] (ORCID:
     <https://orcid.org/0000-0003-4455-1130>),
   Assanali Amandykov [aut, cph]
 Maintainer: Pierre Donat-Bouillud <pierre.donat.bouillud@fit.cvut.cz>
 Repository: CRAN
-Date/Publication: 2026-10-21 16:50:07 UTC
+Date/Publication: 2026-11-17 08:10:09 UTC
